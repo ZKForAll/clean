@@ -63,6 +63,7 @@ template CompConstant(ct) {
     out <== num2bits.out[127];
 }
 -/
+
 def main (ct : ℕ) (input : Vector (Expression (F p)) 254) := do
   let parts : fields 127 (Expression (F p)) <== Vector.ofFn fun i =>
     let clsb := (ct >>> (i.val * 2)) &&& 1
@@ -98,8 +99,8 @@ def main (ct : ℕ) (input : Vector (Expression (F p)) 254) := do
 
 -- Step 2: collapse bit tests
 @[simp]
-lemma shift_and_land_eq_zero (c n : Nat) :
-    (c >>> n &&& 1 == 0) = (¬ c.testBit n) := by
+lemma shift_and_land_eq_zero (n : Nat) :
+    ∀ c : ℕ, (c >>> n &&& 1 == 0) = (¬ c.testBit n) := by
   simp [Nat.testBit]
 
 @[simp]
@@ -107,6 +108,9 @@ lemma shift_and_land_eq_one (c n : Nat) :
     (c >>> n &&& 1 == 1) = (c.testBit n) := by
   simp [Nat.testBit]
 
+set_option maxRecDepth 1_000_000
+set_option maxHeartbeats 400_000
+set_option diagnostics true
 
 def circuit (c : ℕ) : FormalCircuit (F p) (fields 254) field where
   main := main c
@@ -123,8 +127,33 @@ def circuit (c : ℕ) : FormalCircuit (F p) (fields 254) field where
     output = if fromBits (bits.map ZMod.val) > c then 1 else 0
 
   soundness := by
-    intros input env output h_output
-           h_eval_env_out_eq_h_output h_assumptions h_soundness h_output_eval
+    rw?
+    circuit_proof_start
+    simp [circuit_norm]
+    cases h_holds with
+    | intro h_holds_left_1 h_holds_right_1 =>
+      cases h_holds_right_1 with
+      | intro h_holds_left_2 h_holds_right_2 =>
+        cases h_holds_right_2 with
+        | intro h_holds_left_3 h_holds_right_3 =>
+          simp +arith at h_holds_right_3
+          simp +arith[Num2Bits.circuit] at h_holds_left_3
+          simp +arith [h_holds_right_3]
+          cases h_holds_left_3 with
+          | intro h_holds_left_4 h_holds_right_4 =>
+            rw [h_holds_left_2] at h_holds_left_4
+            simp [← h_input]
+            sorry
+
+
+    --   | intro h_holds_right_right_left h_holds_right_right_right =>
+    --     rw [← h_holds_right_right_right]
+    --     simp +arith at h_holds_right_right_right
+    --     simp +arith at h_holds_right_left
+    --     simp +arith
+    --     sorry
+
+
   completeness := by
     simp only [circuit_norm, main, Num2Bits.circuit]
     sorry
