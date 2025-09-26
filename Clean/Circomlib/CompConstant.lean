@@ -1,7 +1,6 @@
 import Clean.Circuit
 import Clean.Utils.Bits
 import Clean.Circomlib.Bitify
-
 /-
 Original source code:
 https://github.com/iden3/circomlib/blob/35e54ea21da3e8762557234298dbb553c175ea8d/circuits/compconstant.circom
@@ -94,6 +93,21 @@ def main (ct : ℕ) (input : Vector (Expression (F p)) 254) := do
   let out <== bits[127]
   return out
 
+-- Step 1: remove = true
+@[simp] lemma eq_true_iff (b : Bool) : (b = true) = b := by rfl
+
+-- Step 2: collapse bit tests
+@[simp]
+lemma shift_and_land_eq_zero (c n : Nat) :
+    (c >>> n &&& 1 == 0) = (¬ c.testBit n) := by
+  simp [Nat.testBit]
+
+@[simp]
+lemma shift_and_land_eq_one (c n : Nat) :
+    (c >>> n &&& 1 == 1) = (c.testBit n) := by
+  simp [Nat.testBit]
+
+
 def circuit (c : ℕ) : FormalCircuit (F p) (fields 254) field where
   main := main c
   localLength _ := 127 + 1 + 135 + 1  -- parts witness + sout witness + Num2Bits + out witness
@@ -109,12 +123,12 @@ def circuit (c : ℕ) : FormalCircuit (F p) (fields 254) field where
     output = if fromBits (bits.map ZMod.val) > c then 1 else 0
 
   soundness := by
-    simp only [circuit_norm, main]
-    sorry
-
+    intros input env output h_output
+           h_eval_env_out_eq_h_output h_assumptions h_soundness h_output_eval
   completeness := by
     simp only [circuit_norm, main, Num2Bits.circuit]
     sorry
+
 end CompConstant
 
 end Circomlib
