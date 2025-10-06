@@ -108,9 +108,9 @@ lemma shift_and_land_eq_one (c n : Nat) :
     (c >>> n &&& 1 == 1) = (c.testBit n) := by
   simp [Nat.testBit]
 
-set_option maxRecDepth 1_000_000
-set_option maxHeartbeats 400_000
-set_option diagnostics true
+-- set_option maxRecDepth 1_000_000
+-- set_option maxHeartbeats 400_000
+-- set_option diagnostics true
 
 def circuit (c : ℕ) : FormalCircuit (F p) (fields 254) field where
   main := main c
@@ -127,24 +127,30 @@ def circuit (c : ℕ) : FormalCircuit (F p) (fields 254) field where
     output = if fromBits (bits.map ZMod.val) > c then 1 else 0
 
   soundness := by
-    rw?
-    circuit_proof_start
-    simp [circuit_norm]
-    cases h_holds with
-    | intro h_holds_left_1 h_holds_right_1 =>
-      cases h_holds_right_1 with
-      | intro h_holds_left_2 h_holds_right_2 =>
-        cases h_holds_right_2 with
-        | intro h_holds_left_3 h_holds_right_3 =>
-          simp +arith at h_holds_right_3
-          simp +arith[Num2Bits.circuit] at h_holds_left_3
-          simp +arith [h_holds_right_3]
-          cases h_holds_left_3 with
-          | intro h_holds_left_4 h_holds_right_4 =>
-            rw [h_holds_left_2] at h_holds_left_4
-            simp [← h_input]
-            sorry
-
+    intro i₀ env input_var input h_input h_assumptions h_holds
+    unfold main at *
+    simp only [circuit_norm, Num2Bits.circuit] at h_holds
+    simp only [circuit_norm] at *
+    obtain ⟨h_holds1, h_holds2⟩ := h_holds
+    obtain ⟨h_holds_left_2, h_holds_right_2⟩ := h_holds2
+    have 2i := i * 2
+  -- soundness := by
+  --   circuit_proof_start
+  --   simp [circuit_norm]
+  --   cases h_holds with
+  --   | intro h_holds_left_1 h_holds_right_1 =>
+  --     cases h_holds_right_1 with
+  --     | intro h_holds_left_2 h_holds_right_2 =>
+  --       cases h_holds_right_2 with
+  --       | intro h_holds_left_3 h_holds_right_3 =>
+  --         simp +arith at h_holds_right_3
+  --         simp +arith[Num2Bits.circuit] at h_holds_left_3
+  --         simp +arith [h_holds_right_3]
+  --         cases h_holds_left_3 with
+  --         | intro h_holds_left_4 h_holds_right_4 =>
+  --           rw [h_holds_left_2] at h_holds_left_4
+  --           simp [← h_input]
+  --           sorry
 
     --   | intro h_holds_right_right_left h_holds_right_right_right =>
     --     rw [← h_holds_right_right_right]
